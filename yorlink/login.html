@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { background-color: #ffff99; font-family: Verdana,sans-serif; }
+</style>
+<title>yorlink v0.1 - login</title>
+</head>
+<body>
+<h1>Login</h1>
+<em id="err"></em>
+<div>
+<form id="form">
+<label for="uname">Username:</label><input type="text" id="uname">
+<br><label for="passwd">Password:</label><input type="password" id="passwd">
+<br><input type="submit" value="Submit">
+</form>
+</div>
+<p>
+You may want to <a href="register.html">register</a> instead.
+</p>
+<script>
+document.getElementById("form").addEventListener("submit",function(e){e.preventDefault(); login();});
+
+async function login(){
+var uname = document.getElementById("uname").value;
+var passwd = document.getElementById("passwd").value;
+
+var e = await fetch("https://dev.maelink.net/login",{
+"headers":{"Content-Type":"application/json"},
+"method":"POST",
+"body":JSON.stringify({"username":uname,"password":passwd})
+});
+var f = await e.json();
+
+if(f.error) {document.getElementById("err").innerText="Failed to log in! Make sure username and password are correct. If you don't have an account, register one first."; return;}
+else{
+var date = new Date(Date.now()+7200000);
+document.cookie = "token="+f.user.token+"; expires="+date.toUTCString()+"; path=/yorlink/";
+document.cookie = "uname="+f.user.username+"; expires="+date.toUTCString()+"; path=/yorlink/";
+document.cookie = "id="+f.user.uuid+"; expires="+date.toUTCString()+"; path=/yorlink/";
+
+location.replace("/yorlink/");
+}
+}
+</script>
+</body>
+</html>

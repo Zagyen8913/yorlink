@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { background-color: #ffff99; font-family: Verdana,sans-serif; }
+</style>
+<title>yorlink v0.1</title>
+</head>
+<body>
+<h1>Welcome to yorlink!</h1>
+<em id="err"></em>
+<p>
+<em id="user"></em>
+<br>
+<ul class="signout">
+	<li><a href="login.html">Login</a></li>
+	<li><a href="register.html">Register</a></li>
+</ul>
+<button type="button" class="signin" onclick="signout();">Sign out</button>
+</p>
+<h2>Recent posts (page <span id="page"></span>):</h2>
+<a href="create.html" class="signin">Create new post</a>
+<ul id="posts"></ul>
+<a href="/yorlink/?page=1" id="prev">Previous page</a>
+<br>
+<a href="/yorlink/?page=2" id="next">Next page</a>
+<script>
+var c = document.cookie.split("; ");
+var cookie = {};
+for (let i=0; i<c.length; i++) cookie[c[i].split('=')[0]] = c[i].split('=')[1];
+
+var query = new URLSearchParams(location.search);
+
+if(typeof cookie.token!="undefined"){
+document.getElementById("user").innerText = "You are logged in as "+cookie.uname+".";
+for(let i=0; i<document.getElementsByClassName("signout").length; i++) document.getElementsByClassName("signout")[i].style.display = "none";
+}
+else{
+document.getElementById("user").innerText = "You are not signed in.";
+for(let i=0; i<document.getElementsByClassName("signin").length; i++) document.getElementsByClassName("signin")[i].style.display = "none";
+}
+
+function signout(){
+document.cookie = "token=; expires="+(new Date().toUTCString())+"; path=/yorlink/";
+location.replace("/yorlink/");
+}
+
+async function like(id){
+var e = await fetch("https://dev.maelink.net/home",{
+	"headers":{"Content-Type":"application/json","Authorization":"Bearer "+cookie.token},
+	"method":"PATCH",
+	"body":JSON.stringify({"like":true,"postId":id})
+});
+var f = await e.json();
+
+if(f.error) {document.getElementById("err").innerText = "Failed to like post. Try again later."; return;}
+else location.reload();
+}
+
+var page = Number(query.get("page"));
+if(page<1) page = 1;
+async function loadposts(){
+var e = await fetch("https://dev.maelink.net/home?page="+page);
+var f = await e.json();
+
+var posts = "";
+for(let i=0; i<f.posts.length; i++){
+	var post = f.posts[i];
+	posts += "<li><b>"+post.author+":</b> "+post.content+"<br><i>("+new Date(post.ts).toUTCString()+", "+post.likes+" likes)</i><br>";
+	if(typeof cookie.token!="undefined") {
+		var likes = JSON.parse(post.users_liked);
+		if(likes.includes(cookie.id)) posts += '<a href="#null" onclick="like('+post.id+');">Unlike</a> ';
+		else posts += '<a href="#null" onclick="like('+post.id+');">Like</a> ';
+		if(post.user_id==cookie.id) posts += '<a href="edit.html?post='+post.id+'">Edit</a> <a href="delete.html?post='+post.id+'">Delete</a> ';
+	}
+	posts += "</li><br>";
+}
+document.getElementById("page").innerText = f.page;
+if(f.page==1) document.getElementById("prev").style.display = "none";
+else document.getElementById("prev").setAttribute("href","/yorlink/?page="+(f.page-1));
+document.getElementById("next").setAttribute("href","/yorlink/?page="+(f.page+1));
+
+document.getElementById("posts").innerHTML += posts;
+
+}
+loadposts();
+</script>
+</body>
+</html>

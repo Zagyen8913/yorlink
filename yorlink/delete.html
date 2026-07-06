@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { background-color: #ffff99; font-family: Verdana,sans-serif; }
+</style>
+<title>yorlink v0.1 - delete post</title>
+</head>
+<body>
+<h1>Are you sure you want to delete this post?</h1>
+<em id="err"></em>
+<p class="signout">
+You need to sign in first.
+<br>
+<ul class="signout">
+	<li><a href="login.html">Login</a></li>
+	<li><a href="register.html">Register</a></li>
+</ul>
+</p>
+<p class="signin">
+Once you have deleted it, you can't restore it.
+<br>
+<ul>
+<li><a href="#null" onclick="del();">Delete it</a></li>
+<li><a href="/yorlink/">Go back</a></li>
+</ul>
+</p>
+<script>
+var c = document.cookie.split("; ");
+var cookie = {};
+for (let i=0; i<c.length; i++) cookie[c[i].split('=')[0]] = c[i].split('=')[1];
+
+var query = new URLSearchParams(location.search);
+
+if(typeof cookie.token!="undefined"){
+for(let i=0; i<document.getElementsByClassName("signout").length; i++) document.getElementsByClassName("signout")[i].style.display = "none";
+}
+else{
+for(let i=0; i<document.getElementsByClassName("signin").length; i++) document.getElementsByClassName("signin")[i].style.display = "none";
+}
+
+async function del(){
+var e = await fetch("https://dev.maelink.net/home",{
+	"headers":{"Content-Type":"application/json","Authorization":"Bearer "+cookie.token},
+	"method":"DELETE",
+	"body":JSON.stringify({"postId":query.get("post")})
+});
+var f = await e.json();
+
+if(f.error) {document.getElementById("err").innerText = "Failed to delete post! Try again later. Remember that you can only delete your own posts."; return;}
+else location.replace("/yorlink/");
+}
+</script>
+</body>
+</html>
